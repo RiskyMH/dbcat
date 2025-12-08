@@ -53,11 +53,14 @@ export function getAllTables(sql: InstanceType<typeof Bun.SQL>) {
   switch (adapter) {
     case "postgres":
       return sql`
-        SELECT table_name as name 
+        SELECT CASE 
+          WHEN table_schema = 'public' THEN table_name 
+          ELSE table_schema || '.' || table_name 
+        END as name
         FROM information_schema.tables 
-        WHERE table_schema = 'public' 
+        WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
         AND table_type = 'BASE TABLE'
-        ORDER BY table_name
+        ORDER BY table_schema, table_name
       ` as Promise<{ name: string }[]>;
     case "mysql":
     case "mariadb":
