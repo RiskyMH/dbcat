@@ -210,12 +210,12 @@ function parseArgs() {
 const DEFAULT_LIMIT = 100;
 
 function showUsageAndExit(): never {
-  console.error("Usage: dbcli <database>");
+  console.error("Usage: dbcat <database>");
   console.error("");
   console.error("Examples:");
-  console.error("  dbcli ./data.db");
-  console.error("  dbcli postgres://user:pass@localhost/mydb");
-  console.error("  dbcli mysql://user:pass@localhost/mydb");
+  console.error("  dbcat ./data.db");
+  console.error("  dbcat postgres://user:pass@localhost/mydb");
+  console.error("  dbcat mysql://user:pass@localhost/mydb");
   console.error("");
   console.error("Or set DATABASE_URL environment variable.");
   process.exit(1);

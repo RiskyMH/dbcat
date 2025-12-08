@@ -1,4 +1,4 @@
-# dbcat
+# `dbcat`
 
 A simple CLI to view database tables. Supports PostgreSQL, MySQL, and SQLite.
 
