@@ -1,13 +1,12 @@
 #!/usr/bin/env bun
 
-import { SQL } from "bun";
-import { printTable } from "./table.ts";
-
 if (typeof Bun !== "object") throw new Error("Please install & use bun!");
 
-export function createConnection(input?: string): InstanceType<typeof SQL> {
+import { printTable } from "./table.ts";
+
+export function createConnection(input?: string): InstanceType<typeof Bun.SQL> {
   if (!input) {
-    return new SQL();
+    return new Bun.SQL();
   }
 
   if (
@@ -16,14 +15,14 @@ export function createConnection(input?: string): InstanceType<typeof SQL> {
       input.endsWith(".sqlite") ||
       input.endsWith(".sqlite3"))
   ) {
-    return new SQL(`sqlite://${input}`);
+    return new Bun.SQL(`sqlite://${input}`);
   }
 
-  return new SQL(input);
+  return new Bun.SQL(input);
 }
 
 export async function getDatabaseName(
-  sql: InstanceType<typeof SQL>
+  sql: InstanceType<typeof Bun.SQL>
 ): Promise<string | null> {
   const adapter = sql.options.adapter;
 
@@ -38,17 +37,17 @@ export async function getDatabaseName(
       return result[0]?.name ?? null;
     }
     case "sqlite": {
-      const filename = (sql.options as { filename?: string }).filename;
+      const filename = sql.options.filename;
       if (!filename || filename === ":memory:") return null;
 
-      return filename.split("/").pop() ?? null;
+      return filename.toString().split("/").at(-1) ?? null;
     }
     default:
       return null;
   }
 }
 
-export function getAllTables(sql: InstanceType<typeof SQL>) {
+export function getAllTables(sql: InstanceType<typeof Bun.SQL>) {
   const adapter = sql.options.adapter;
 
   switch (adapter) {
@@ -83,7 +82,7 @@ export function getAllTables(sql: InstanceType<typeof SQL>) {
 }
 
 export async function getTableCount(
-  sql: InstanceType<typeof SQL>,
+  sql: InstanceType<typeof Bun.SQL>,
   tableName: string
 ): Promise<number> {
   const result = await sql`SELECT COUNT(*) as count FROM ${sql(tableName)}`;
@@ -91,70 +90,18 @@ export async function getTableCount(
 }
 
 export function getTableData(
-  sql: InstanceType<typeof SQL>,
+  sql: InstanceType<typeof Bun.SQL>,
   tableName: string,
   limit?: number
-) {
+): Promise<Record<string, unknown>[]> {
   if (limit === undefined) {
-    return sql`SELECT * FROM ${sql(tableName)}` as Promise<
-      Record<string, unknown>[]
-    >;
+    return sql`SELECT * FROM ${sql(tableName)}`;
   }
-  return sql`SELECT * FROM ${sql(tableName)} LIMIT ${limit}` as Promise<
-    Record<string, unknown>[]
-  >;
+  return sql`SELECT * FROM ${sql(tableName)} LIMIT ${limit}`;
 }
 
-export function runQuery(sql: InstanceType<typeof SQL>, query: string) {
+export function runQuery(sql: InstanceType<typeof Bun.SQL>, query: string) {
   return sql.unsafe(query) as Promise<Record<string, unknown>[]>;
-}
-
-export function formatTableOutput(
-  tableName: string,
-  rows: Record<string, unknown>[]
-): string {
-  const lines: string[] = [];
-  lines.push(`\n=== ${tableName} ===`);
-
-  if (rows.length === 0) {
-    lines.push("(empty table)");
-    return lines.join("\n");
-  }
-
-  const maxRows = 100;
-  const displayRows = rows.slice(0, maxRows);
-
-  if (displayRows.length > 0) {
-    const keys = Object.keys(displayRows[0]!);
-    lines.push(keys.join(" | "));
-    lines.push("-".repeat(keys.join(" | ").length));
-    for (const row of displayRows) {
-      lines.push(keys.map((k) => String(row[k] ?? "NULL")).join(" | "));
-    }
-  }
-
-  if (rows.length > maxRows) {
-    lines.push(`... and ${rows.length - maxRows} more rows`);
-  }
-
-  return lines.join("\n");
-}
-
-export function formatQueryResult(rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) {
-    return "(no results)";
-  }
-
-  const lines: string[] = [];
-  const keys = Object.keys(rows[0]!);
-  lines.push(keys.join(" | "));
-  lines.push("-".repeat(keys.join(" | ").length));
-  for (const row of rows) {
-    lines.push(keys.map((k) => String(row[k] ?? "NULL")).join(" | "));
-  }
-  lines.push(`\n${rows.length} row(s)`);
-
-  return lines.join("\n");
 }
 
 function displayTable(
@@ -184,13 +131,11 @@ async function readStdin(): Promise<string | null> {
   }
 }
 
-type JsonMode = false | "plain" | "color";
-
 function parseArgs() {
   const args = process.argv.slice(2);
   let input: string | undefined;
   let full = false;
-  let json: JsonMode = false;
+  let json: false | "plain" | "color" = false;
 
   for (const arg of args) {
     if (arg === "--full" || arg === "-f") {
@@ -237,7 +182,7 @@ async function main() {
     showUsageAndExit();
   }
 
-  let sql: InstanceType<typeof SQL>;
+  let sql: InstanceType<typeof Bun.SQL>;
   try {
     sql = createConnection(input);
   } catch (error) {
@@ -250,7 +195,7 @@ async function main() {
   const dim = Bun.enableANSIColors ? "\x1b[2m" : "";
   const reset = Bun.enableANSIColors ? "\x1b[0m" : "";
   const bold = Bun.enableANSIColors ? "\x1b[1m" : "";
-  const clearLine = "\x1b[2K\r";
+  const clearLine = Bun.enableANSIColors ? "\x1b[2K\r" : "";
 
   try {
     const stdinQuery = await readStdin();
@@ -263,7 +208,7 @@ async function main() {
         displayQueryResult(results);
       }
     } else {
-      if (isTTY && !json) {
+      if (Bun.enableANSIColors && isTTY && !json) {
         process.stdout.write(
           `${dim}Connecting to ${sql.options.adapter}...${reset}`
         );
@@ -284,16 +229,11 @@ async function main() {
         }
         outputJson(result, json === "color");
       } else {
+        if (Bun.enableANSIColors && isTTY) process.stdout.write(clearLine);
         const dbDisplay = dbName
           ? `${bold}${dbName}${reset}`
           : `${bold}${sql.options.adapter}${reset} ${dim}database${reset}`;
-        if (isTTY) {
-          process.stdout.write(
-            `${clearLine}${dim}Connected to${reset} ${dbDisplay}\n`
-          );
-        } else {
-          console.log(`Connected to ${dbName || sql.options.adapter}`);
-        }
+        console.log(`${dim}Connected to${reset} ${dbDisplay}`);
 
         if (tables.length === 0) {
           console.log(`${dim}No tables found.${reset}`);
@@ -314,7 +254,7 @@ async function main() {
       }
     }
   } catch (error) {
-    if (isTTY && !json) {
+    if (Bun.enableANSIColors && isTTY && !json) {
       process.stdout.write(clearLine);
     }
     const message = error instanceof Error ? error.message : String(error);

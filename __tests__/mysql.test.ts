@@ -83,8 +83,7 @@ describe.skipIf(!(await isDockerAvailable())).each(databases)("$name", (config) 
     container = await startContainer(config);
     connectionUrl = `${config.protocol}://root:testpass@localhost:${container.port}/testdb`;
 
-    const { SQL } = await import("bun");
-    const setupSql = new SQL(connectionUrl);
+    const setupSql = new Bun.SQL(connectionUrl);
     await setupSql`CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))`;
     await setupSql`CREATE TABLE posts (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255))`;
     await setupSql`INSERT INTO users (name) VALUES ('Alice')`;

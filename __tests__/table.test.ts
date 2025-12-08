@@ -14,15 +14,10 @@ function captureOutput(fn: () => void): string {
   return logs.join("\n");
 }
 
-// Strip ANSI codes for easier testing
-function stripAnsi(str: string): string {
-  return Bun.stripANSI(str);
-}
-
 describe("printTable", () => {
   test("single column", () => {
     const rows = [{ id: 1 }, { id: 2 }];
-    const output = stripAnsi(captureOutput(() => printTable(rows, { title: "single" })));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "single" })));
     expect(output).toMatchInlineSnapshot(`
 "╭─ single ───╮
 │         id │
@@ -35,7 +30,7 @@ describe("printTable", () => {
 
   test("single row", () => {
     const rows = [{ a: 1, b: 2 }];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭───┬───╮
 │ a │ b │
@@ -50,7 +45,7 @@ describe("printTable", () => {
       { id: 1, name: "Alice", email: "alice@example.com" },
       { id: 2, name: "Bob", email: "bob@test.com" },
     ];
-    const output = stripAnsi(captureOutput(() => printTable(rows, { title: "users" })));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "users" })));
     expect(output).toMatchInlineSnapshot(`
 "╭─ users ────┬───────────────────╮
 │ id │ name  │ email             │
@@ -62,7 +57,7 @@ describe("printTable", () => {
   });
 
   test("empty table with title", () => {
-    const output = stripAnsi(captureOutput(() => printTable([], { title: "empty" })));
+    const output = Bun.stripANSI(captureOutput(() => printTable([], { title: "empty" })));
     expect(output).toMatchInlineSnapshot(`
 "╭─ empty ──╮
 │ (empty) │
@@ -71,13 +66,13 @@ describe("printTable", () => {
   });
 
   test("empty table without title", () => {
-    const output = stripAnsi(captureOutput(() => printTable([])));
+    const output = Bun.stripANSI(captureOutput(() => printTable([])));
     expect(output).toMatchInlineSnapshot(`"(empty)"`);
   });
 
   test("null and undefined values", () => {
     const rows = [{ id: 1, nullable: null, missing: undefined }];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭────┬──────────┬─────────╮
 │ id │ nullable │ missing │
@@ -89,7 +84,7 @@ describe("printTable", () => {
 
   test("empty string values", () => {
     const rows = [{ id: 1, name: "", value: "test" }];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭────┬──────┬───────╮
 │ id │ name │ value │
@@ -101,7 +96,7 @@ describe("printTable", () => {
 
   test("numeric values", () => {
     const rows = [{ int: 42, float: 3.14, big: 1000000 }];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭─────┬───────┬─────────╮
 │ int │ float │     big │
@@ -116,7 +111,7 @@ describe("printTable", () => {
       { name: "日本語", emoji: "🎉" },
       { name: "中文", emoji: "🚀" },
     ];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭────────┬───────╮
 │ name   │ emoji │
@@ -129,7 +124,7 @@ describe("printTable", () => {
 
   test("respects maxRows option", () => {
     const rows = Array.from({ length: 10 }, (_, i) => ({ id: i }));
-    const output = stripAnsi(captureOutput(() => printTable(rows, { maxRows: 3 })));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3 })));
     expect(output).toMatchInlineSnapshot(`
 "╭────╮
 │ id │
@@ -150,7 +145,7 @@ describe("printTable", () => {
     const originalColumns = process.stdout.columns;
     Object.defineProperty(process.stdout, "columns", { value: 50, configurable: true });
     try {
-      const output = stripAnsi(captureOutput(() => printTable(rows)));
+      const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
       expect(output).toMatchInlineSnapshot(`
 "╭────────┬──────────────────────────────────────╮
 │     id │ description                          │
@@ -168,7 +163,7 @@ describe("printTable", () => {
     const originalColumns = process.stdout.columns;
     Object.defineProperty(process.stdout, "columns", { value: 30, configurable: true });
     try {
-      const output = stripAnsi(captureOutput(() => printTable(rows)));
+      const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
       expect(output).toMatchInlineSnapshot(`
 "╭───┬───┬───┬───╮
 │ a │ b │ c │ d │
@@ -187,7 +182,7 @@ describe("printTable", () => {
     const originalColumns = process.stdout.columns;
     Object.defineProperty(process.stdout, "columns", { value: 25, configurable: true });
     try {
-      const output = stripAnsi(captureOutput(() => printTable(rows, { maxRows: 3 })));
+      const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3 })));
       expect(output).toMatchInlineSnapshot(`
 "╭───┬───┬───┬───╮
 │ a │ b │ c │ d │
@@ -209,7 +204,7 @@ describe("printTable", () => {
       { id: 22, name: "Bob", amount: 99.99 },
       { id: 333, name: "Charlie", amount: 5 },
     ];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭─────┬─────────┬─────────╮
 │  id │ name    │  amount │
@@ -226,7 +221,7 @@ describe("printTable", () => {
       { code: 123 },
       { code: "ABC" },
     ];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭──────╮
 │ code │
@@ -239,7 +234,7 @@ describe("printTable", () => {
 
   test("totalRows shows actual count from database", () => {
     const rows = [{ id: 1 }, { id: 2 }, { id: 3 }];
-    const output = stripAnsi(captureOutput(() => printTable(rows, { maxRows: 3, totalRows: 1000 })));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3, totalRows: 1000 })));
     expect(output).toMatchInlineSnapshot(`
 "╭────╮
 │ id │
@@ -254,7 +249,7 @@ describe("printTable", () => {
 
   test("title expands table width", () => {
     const rows = [{ a: 1 }];
-    const output = stripAnsi(captureOutput(() => printTable(rows, { title: "this is a very long title" })));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "this is a very long title" })));
     expect(output).toMatchInlineSnapshot(`
 "╭─ this is a very long title ───╮
 │                             a │
@@ -266,7 +261,7 @@ describe("printTable", () => {
 
   test("handles bigint values", () => {
     const rows = [{ big: BigInt("9007199254740993") }];
-    const output = stripAnsi(captureOutput(() => printTable(rows)));
+    const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭───────────────────╮
 │               big │
@@ -281,7 +276,7 @@ describe("printTable", () => {
     const originalColumns = process.stdout.columns;
     Object.defineProperty(process.stdout, "columns", { value: 30, configurable: true });
     try {
-      const output = stripAnsi(captureOutput(() => printTable(rows, { title: "this_is_a_very_long_table_name_that_exceeds_terminal" })));
+      const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "this_is_a_very_long_table_name_that_exceeds_terminal" })));
       // Table expands for long title (title is not truncated)
       expect(output).toContain("this_is_a_very_long_table_name_that_exceeds_terminal");
     } finally {

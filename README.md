@@ -56,6 +56,14 @@ Connected to demo.sqlite
 ╰──────────────────────────────────────────────────────────────╯
 ```
 
+### Scrollable Output
+
+Pipe to `less -R` for scrollable output with colors:
+
+```sh
+bunx dbcat ./data.db --full | less -R
+```
+
 ## Requirements
 
 [Bun](https://bun.sh) v1.3+

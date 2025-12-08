@@ -17,7 +17,7 @@ const BOX = {
 };
 
 function getTerminalWidth(): number {
-  return process.stdout.columns || 120;
+  return process.stdout.columns || process.stderr.columns || 120;
 }
 
 function formatValue(value: unknown): string {
@@ -87,10 +87,7 @@ export function printTable(
 
   if (rows.length === 0) {
     if (title) {
-      const contentWidth = Math.max(
-        Bun.stringWidth("(empty)"),
-        Bun.stringWidth(title)
-      );
+      const contentWidth = Math.max("(empty)".length, Bun.stringWidth(title));
       const innerWidth = contentWidth + 2;
       const titleDisplay = ` ${title} `;
       const titleWidth = Bun.stringWidth(titleDisplay);

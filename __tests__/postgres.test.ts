@@ -71,8 +71,7 @@ describe.skipIf(!(await isDockerAvailable()))("PostgreSQL", () => {
     container = await startPostgres();
     connectionUrl = `postgres://postgres:testpass@localhost:${container.port}/testdb`;
 
-    const { SQL } = await import("bun");
-    const setupSql = new SQL(connectionUrl);
+    const setupSql = new Bun.SQL(connectionUrl);
     await setupSql`CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, email TEXT)`;
     await setupSql`CREATE TABLE posts (id SERIAL PRIMARY KEY, title TEXT)`;
     await setupSql`INSERT INTO users (name, email) VALUES ('Alice', 'alice@test.com')`;

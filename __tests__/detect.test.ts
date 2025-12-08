@@ -5,11 +5,7 @@ import { createConnection } from "../src/index.ts";
 const tempFiles: string[] = [];
 
 afterAll(async () => {
-  for (const file of tempFiles) {
-    try {
-      await Bun.file(file).delete();
-    } catch {}
-  }
+  await Promise.allSettled(tempFiles.map(file => Bun.file(file).delete()))
 });
 
 describe("createConnection", () => {
