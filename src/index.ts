@@ -3,6 +3,11 @@
 if (typeof Bun !== "object") throw new Error("Please install & use bun!");
 
 import { printTable } from "./table.ts";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const SQLITE_EXTENSIONS = [".db", ".sqlite", ".sqlite3", ".db3", ".s3db"];
+const REMOTE_PROTOCOLS = ["http://", "https://", "s3://"];
 
 export function createConnection(input?: string): InstanceType<typeof Bun.SQL> {
   if (!input) {
@@ -11,14 +16,28 @@ export function createConnection(input?: string): InstanceType<typeof Bun.SQL> {
 
   if (
     !input.includes("://") &&
-    (input.endsWith(".db") ||
-      input.endsWith(".sqlite") ||
-      input.endsWith(".sqlite3"))
+    SQLITE_EXTENSIONS.some((ext) => input.endsWith(ext))
   ) {
     return new Bun.SQL(`sqlite://${input}`);
   }
 
   return new Bun.SQL(input);
+}
+
+async function downloadToTmp(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const urlPath = new URL(url).pathname;
+  const filename = urlPath.split("/").at(-1) || "downloaded.db";
+  const tmpPath = join(tmpdir(), `dbcat-${Bun.hash(url)}-${filename}`);
+  await Bun.write(tmpPath, response);
+
+  return tmpPath;
 }
 
 export async function getDatabaseName(
@@ -164,6 +183,7 @@ function showUsageAndExit(): never {
   console.error("  dbcat ./data.db");
   console.error("  dbcat postgres://user:pass@localhost/mydb");
   console.error("  dbcat mysql://user:pass@localhost/mydb");
+  console.error("  dbcat https://example.com/data.db");
   console.error("");
   console.error("Or set DATABASE_URL environment variable.");
   process.exit(1);
@@ -185,20 +205,45 @@ async function main() {
     showUsageAndExit();
   }
 
-  let sql: InstanceType<typeof Bun.SQL>;
-  try {
-    sql = createConnection(input);
-  } catch (error) {
-    console.error("Failed to connect:");
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-
   const isTTY = process.stdout.isTTY;
   const dim = Bun.enableANSIColors ? "\x1b[2m" : "";
   const reset = Bun.enableANSIColors ? "\x1b[0m" : "";
   const bold = Bun.enableANSIColors ? "\x1b[1m" : "";
   const clearLine = Bun.enableANSIColors ? "\x1b[2K\r" : "";
+
+  // Handle remote URLs pointing to SQLite files
+  let connectionInput = input;
+  if (
+    input &&
+    REMOTE_PROTOCOLS.some((p) => input.startsWith(p)) &&
+    SQLITE_EXTENSIONS.some((ext) => input.endsWith(ext))
+  ) {
+    if (Bun.enableANSIColors && isTTY && !json) {
+      process.stdout.write(`${dim}Downloading SQLite database...${reset}`);
+    }
+    try {
+      connectionInput = `sqlite://${await downloadToTmp(input)}`;
+    } catch (error) {
+      if (Bun.enableANSIColors && isTTY && !json) {
+        process.stdout.write("\n");
+      }
+      console.error("Failed to download:");
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+    if (Bun.enableANSIColors && isTTY && !json) {
+      process.stdout.write(clearLine);
+    }
+  }
+
+  let sql: InstanceType<typeof Bun.SQL>;
+  try {
+    sql = createConnection(connectionInput);
+  } catch (error) {
+    console.error("Failed to connect:");
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 
   try {
     const stdinQuery = await readStdin();
@@ -258,7 +303,7 @@ async function main() {
     }
   } catch (error) {
     if (Bun.enableANSIColors && isTTY && !json) {
-      process.stdout.write(clearLine);
+      process.stdout.write("\n");
     }
     const message = error instanceof Error ? error.message : String(error);
 

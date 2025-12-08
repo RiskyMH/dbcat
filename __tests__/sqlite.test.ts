@@ -169,4 +169,45 @@ describe("SQLite", () => {
 "
 `);
   });
+
+  test("CLI downloads and opens remote SQLite file", async () => {
+    const remoteUrl =
+      "https://github.com/lerocha/chinook-database/raw/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite";
+
+    const proc = Bun.spawn(
+      ["bun", "src/index.ts", remoteUrl, "--json"],
+      {
+        cwd: import.meta.dir + "/..",
+        stdout: "pipe",
+        stderr: "pipe",
+      }
+    );
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(0);
+
+    const data = JSON.parse(stdout);
+    expect(data).toHaveProperty("Album");
+    expect(data).toHaveProperty("Artist");
+    expect(data).toHaveProperty("Track");
+    expect(data.Artist.length).toBeGreaterThan(0);
+    expect(data.Artist[0]).toHaveProperty("Name");
+  });
+
+  test("CLI fails gracefully on invalid remote URL", async () => {
+    const proc = Bun.spawn(
+      ["bun", "src/index.ts", "https://riskymh.dev/404/nonexistent.db"],
+      {
+        cwd: import.meta.dir + "/..",
+        stdout: "pipe",
+        stderr: "pipe",
+      }
+    );
+    const stderr = await new Response(proc.stderr).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("Failed to download");
+  });
 });

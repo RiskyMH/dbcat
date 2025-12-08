@@ -11,32 +11,33 @@ bunx dbcat ./data.db
 Connect to a database to browse all tables:
 
 ```sh
-# SQLite file
+# No argument - uses DATABASE_URL environment variable
+bunx dbcat
+
+# SQLite
 bunx dbcat ./database.sqlite
+bunx dbcat https://example.com/data.db
 
 # PostgreSQL
 bunx dbcat postgres://user:pass@localhost:5432/mydb
 
 # MySQL
 bunx dbcat mysql://user:pass@localhost:3306/mydb
-
-# No argument - uses DATABASE_URL environment variable
-bunx dbcat
 ```
 
 Run a query by piping SQL:
 
 ```sh
-echo "SELECT * FROM users WHERE active = true" | bunx dbcat ./data.db
+echo "SELECT * FROM users" | bunx dbcat ./data.db
 ```
 
 ### Options
 
-| Flag | Description |
-|------|-------------|
+| Flag           | Description                                       |
+|----------------|---------------------------------------------------|
 | `--full`, `-f` | Show all rows when browsing tables (default: 100) |
-| `--json` | Output as JSON (indented if TTY) |
-| `--json=color` | Output as normal object console.log |
+| `--json`       | Output as JSON (indented if TTY)                  |
+| `--json=color` | Output as normal object console.log               |
 
 Piped queries always return all rows.
 
