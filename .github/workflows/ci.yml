@@ -8,7 +8,6 @@ on:
 
 jobs:
   typecheck:
-    name: Typecheck
     runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v4
@@ -17,57 +16,16 @@ jobs:
       - run: bun run tsc --noEmit
 
   test:
-    name: Test (${{ matrix.os }}-${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: linux
-            arch: x64
-            runner: ubuntu-latest
-            bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip
-          - os: linux
-            arch: arm64
-            runner: ubuntu-24.04-arm
-            bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-linux-aarch64.zip
-          - os: macos
-            arch: x64
-            runner: macos-15-intel
-            bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-darwin-x64.zip
-          - os: macos
-            arch: arm64
-            runner: macos-latest
-            bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-darwin-aarch64.zip
-          - os: windows
-            arch: x64
-            runner: windows-latest
-            bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-windows-x64.zip
-          # - os: windows
-          #   arch: arm64
-          #   runner: windows-11-arm
-          #   expermental: true
-          #   bun-download-url: https://github.com/oven-sh/bun/releases/latest/download/bun-windows-x64-baseline.zip
-
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-download-url: ${{ matrix.bun-download-url }}
-
-      - name: Show Bun version
-        run: bun --version
-
-      # - name: Pull Docker images
-      #   if: matrix.os == 'linux'
-      #   run: |
-      #     docker pull postgres:16 &
-      #     docker pull mysql:8 &
-      #     docker pull mariadb:11 &
-      #     wait
-
+      - uses: oven-sh/setup-bun@v2
+      - name: Pull Docker images
+        run: |
+          docker pull postgres:16 &
+          docker pull mysql:8 &
+          docker pull mariadb:11 &
+          wait
       - run: bun install
       - run: bun test --concurrent
 

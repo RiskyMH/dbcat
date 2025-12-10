@@ -1,7 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { Database } from "bun:sqlite";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   createConnection,
   getAllTables,
@@ -11,7 +9,7 @@ import {
 } from "../src/index.ts";
 
 describe("SQLite", () => {
-  const testDbPath = join(tmpdir(), `dbcli-sqlite-${Date.now()}.db`);
+  const testDbPath = `/tmp/dbcli-sqlite-${Date.now()}.db`;
   let sql: ReturnType<typeof createConnection>;
 
   beforeAll(() => {

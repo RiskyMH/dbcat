@@ -1,7 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { Database } from "bun:sqlite";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 
 async function runCli(
   args: string[],
@@ -23,8 +21,8 @@ async function runCli(
 }
 
 describe("CLI", () => {
-  const testDbPath = join(tmpdir(), `dbcli-cli-${Date.now()}.db`);
-  const largeDbPath = join(tmpdir(), `dbcli-large-${Date.now()}.db`);
+  const testDbPath = `/tmp/dbcli-cli-${Date.now()}.db`;
+  const largeDbPath = `/tmp/dbcli-large-${Date.now()}.db`;
 
   beforeAll(() => {
     // Small test db
