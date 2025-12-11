@@ -1,6 +1,6 @@
 {
   "name": "dbcat",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "A simple CLI to view database tables. Supports PostgreSQL, MySQL, and SQLite.",
   "author": "RiskyMH",
   "license": "MIT",
@@ -12,6 +12,10 @@
   "bugs": {
     "url": "https://github.com/RiskyMH/dbcat/issues"
   },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "sideEffects": false,
   "keywords": [
     "database",
     "cli",
