@@ -78,7 +78,7 @@ export interface TableOptions {
 
 export function printTable(
   rows: Record<string, unknown>[],
-  options: TableOptions = {}
+  options: TableOptions = {},
 ): void {
   const { maxRows = 100, title, totalRows } = options;
   const dim = Bun.enableANSIColors ? DIM : "";
@@ -87,28 +87,30 @@ export function printTable(
 
   if (rows.length === 0) {
     if (title) {
-      const contentWidth = Math.max("(empty)".length, Bun.stringWidth(title));
-      const innerWidth = contentWidth + 2;
+      const emptyText = "(empty)";
+      const contentWidth = Math.max(
+        Bun.stringWidth(emptyText),
+        Bun.stringWidth(title),
+      );
       const titleDisplay = ` ${title} `;
       const titleWidth = Bun.stringWidth(titleDisplay);
-      const remainingWidth = innerWidth - titleWidth;
+      const innerWidth = contentWidth + 2;
+      const remainingWidth = innerWidth - titleWidth - 1;
       console.log(
-        `${dim}${BOX.topLeft}${
-          BOX.horizontal
-        }${reset}${bold}${titleDisplay}${reset}${dim}${BOX.horizontal.repeat(
-          Math.max(0, remainingWidth)
-        )}${BOX.topRight}${reset}`
+        `${dim}${BOX.topLeft}${BOX.horizontal}${reset}${bold}${titleDisplay}${reset}${dim}${BOX.horizontal.repeat(
+          Math.max(0, remainingWidth),
+        )}${BOX.topRight}${reset}`,
       );
       console.log(
         `${dim}${BOX.vertical}${reset} ${padRight(
-          "(empty)",
-          contentWidth
-        )} ${dim}${BOX.vertical}${reset}`
+          emptyText,
+          contentWidth,
+        )} ${dim}${BOX.vertical}${reset}`,
       );
       console.log(
         `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${
           BOX.bottomRight
-        }${reset}`
+        }${reset}`,
       );
     } else {
       console.log("(empty)");
@@ -139,7 +141,7 @@ export function printTable(
       const formatted = formatValue(row[col]).replace(/\n/g, " ");
       colWidths[i] = Math.max(colWidths[i]!, Bun.stringWidth(formatted));
       return formatted;
-    })
+    }),
   );
 
   const minColWidth = 3;
@@ -160,7 +162,7 @@ export function printTable(
 
   const visibleColWidths = colWidths.slice(0, columns.length);
   const visibleFormattedRows = formattedRows.map((row) =>
-    row.slice(0, columns.length)
+    row.slice(0, columns.length),
   );
   const visibleIsNumeric = isNumericCol.slice(0, columns.length);
 
@@ -168,14 +170,14 @@ export function printTable(
 
   if (totalWidth > availableForColumns) {
     const headerWidths = columns.map((col) =>
-      Math.max(minColWidth, Bun.stringWidth(col))
+      Math.max(minColWidth, Bun.stringWidth(col)),
     );
     const sqrtWidths = visibleColWidths.map((w) => Math.sqrt(w));
     const sqrtTotal = sqrtWidths.reduce((a, b) => a + b, 0);
 
     for (let i = 0; i < visibleColWidths.length; i++) {
       const fair = Math.floor(
-        (sqrtWidths[i]! / sqrtTotal) * availableForColumns
+        (sqrtWidths[i]! / sqrtTotal) * availableForColumns,
       );
       visibleColWidths[i] = Math.max(headerWidths[i]!, fair);
     }
@@ -214,7 +216,7 @@ export function printTable(
   const maxInnerWidth = termWidth - 4;
   const innerWidth = Math.min(
     Math.max(contentWidth, titleWidth),
-    maxInnerWidth
+    maxInnerWidth,
   );
 
   const totalInnerWidth = innerWidth + 2;
@@ -234,7 +236,7 @@ export function printTable(
     const beforeTitle = fullTopBorder.slice(0, 2);
     const afterTitle = fullTopBorder.slice(2 + titleDisplayWidth);
     console.log(
-      `${dim}${beforeTitle}${reset}${bold}${titleDisplay}${reset}${dim}${afterTitle}${reset}`
+      `${dim}${beforeTitle}${reset}${bold}${titleDisplay}${reset}${dim}${afterTitle}${reset}`,
     );
   } else {
     console.log(`${dim}${fullTopBorder}${reset}`);
@@ -249,14 +251,14 @@ export function printTable(
     })
     .join(` ${dim}${BOX.vertical}${reset} `);
   console.log(
-    `${dim}${BOX.vertical}${reset} ${header} ${dim}${BOX.vertical}${reset}`
+    `${dim}${BOX.vertical}${reset} ${header} ${dim}${BOX.vertical}${reset}`,
   );
 
   const headerSep = visibleColWidths
     .map((w) => BOX.horizontal.repeat(w))
     .join(`${BOX.horizontal}${BOX.headerCross}${BOX.horizontal}`);
   console.log(
-    `${dim}${BOX.headerLeft}${BOX.horizontal}${headerSep}${BOX.horizontal}${BOX.headerRight}${reset}`
+    `${dim}${BOX.headerLeft}${BOX.horizontal}${headerSep}${BOX.horizontal}${BOX.headerRight}${reset}`,
   );
 
   for (const row of visibleFormattedRows) {
@@ -269,7 +271,7 @@ export function printTable(
       })
       .join(` ${dim}${BOX.vertical}${reset} `);
     console.log(
-      `${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`
+      `${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`,
     );
   }
 
@@ -281,14 +283,14 @@ export function printTable(
     console.log(
       `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(totalInnerWidth)}${
         BOX.bottomRight
-      }${reset}`
+      }${reset}`,
     );
   } else {
     const bottomBorder = visibleColWidths
       .map((w) => BOX.horizontal.repeat(w))
       .join(`${BOX.horizontal}${BOX.bottomCross}${BOX.horizontal}`);
     console.log(
-      `${dim}${BOX.bottomLeft}${BOX.horizontal}${bottomBorder}${BOX.horizontal}${BOX.bottomRight}${reset}`
+      `${dim}${BOX.bottomLeft}${BOX.horizontal}${bottomBorder}${BOX.horizontal}${BOX.bottomRight}${reset}`,
     );
   }
 }

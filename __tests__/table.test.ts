@@ -17,7 +17,9 @@ function captureOutput(fn: () => void): string {
 describe("printTable", () => {
   test("single column", () => {
     const rows = [{ id: 1 }, { id: 2 }];
-    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "single" })));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable(rows, { title: "single" })),
+    );
     expect(output).toMatchInlineSnapshot(`
 "╭─ single ───╮
 │         id │
@@ -45,7 +47,9 @@ describe("printTable", () => {
       { id: 1, name: "Alice", email: "alice@example.com" },
       { id: 2, name: "Bob", email: "bob@test.com" },
     ];
-    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "users" })));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable(rows, { title: "users" })),
+    );
     expect(output).toMatchInlineSnapshot(`
 "╭─ users ────┬───────────────────╮
 │ id │ name  │ email             │
@@ -57,9 +61,11 @@ describe("printTable", () => {
   });
 
   test("empty table with title", () => {
-    const output = Bun.stripANSI(captureOutput(() => printTable([], { title: "empty" })));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable([], { title: "empty" })),
+    );
     expect(output).toMatchInlineSnapshot(`
-"╭─ empty ──╮
+"╭─ empty ─╮
 │ (empty) │
 ╰─────────╯"
 `);
@@ -124,7 +130,9 @@ describe("printTable", () => {
 
   test("respects maxRows option", () => {
     const rows = Array.from({ length: 10 }, (_, i) => ({ id: i }));
-    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3 })));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable(rows, { maxRows: 3 })),
+    );
     expect(output).toMatchInlineSnapshot(`
 "╭────╮
 │ id │
@@ -139,11 +147,17 @@ describe("printTable", () => {
 
   test("long value gets truncated", () => {
     const rows = [
-      { id: 1, description: "This is a very long description that should be truncated" },
+      {
+        id: 1,
+        description: "This is a very long description that should be truncated",
+      },
     ];
     // Simulate 50 char terminal
     const originalColumns = process.stdout.columns;
-    Object.defineProperty(process.stdout, "columns", { value: 50, configurable: true });
+    Object.defineProperty(process.stdout, "columns", {
+      value: 50,
+      configurable: true,
+    });
     try {
       const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
       expect(output).toMatchInlineSnapshot(`
@@ -154,14 +168,20 @@ describe("printTable", () => {
 ╰────────┴──────────────────────────────────────╯"
 `);
     } finally {
-      Object.defineProperty(process.stdout, "columns", { value: originalColumns, configurable: true });
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
     }
   });
 
   test("many columns get hidden when terminal is narrow", () => {
     const rows = [{ a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8 }];
     const originalColumns = process.stdout.columns;
-    Object.defineProperty(process.stdout, "columns", { value: 30, configurable: true });
+    Object.defineProperty(process.stdout, "columns", {
+      value: 30,
+      configurable: true,
+    });
     try {
       const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
       expect(output).toMatchInlineSnapshot(`
@@ -173,16 +193,31 @@ describe("printTable", () => {
 ╰───────────────╯"
 `);
     } finally {
-      Object.defineProperty(process.stdout, "columns", { value: originalColumns, configurable: true });
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
     }
   });
 
   test("both rows and columns truncated", () => {
-    const rows = Array.from({ length: 10 }, (_, i) => ({ a: i, b: i, c: i, d: i, e: i, f: i }));
+    const rows = Array.from({ length: 10 }, (_, i) => ({
+      a: i,
+      b: i,
+      c: i,
+      d: i,
+      e: i,
+      f: i,
+    }));
     const originalColumns = process.stdout.columns;
-    Object.defineProperty(process.stdout, "columns", { value: 25, configurable: true });
+    Object.defineProperty(process.stdout, "columns", {
+      value: 25,
+      configurable: true,
+    });
     try {
-      const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3 })));
+      const output = Bun.stripANSI(
+        captureOutput(() => printTable(rows, { maxRows: 3 })),
+      );
       expect(output).toMatchInlineSnapshot(`
 "╭───┬───┬───┬───╮
 │ a │ b │ c │ d │
@@ -194,7 +229,10 @@ describe("printTable", () => {
 ╰───────────────╯"
 `);
     } finally {
-      Object.defineProperty(process.stdout, "columns", { value: originalColumns, configurable: true });
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
     }
   });
 
@@ -217,10 +255,7 @@ describe("printTable", () => {
   });
 
   test("mixed numeric and string columns stay left-aligned if any string", () => {
-    const rows = [
-      { code: 123 },
-      { code: "ABC" },
-    ];
+    const rows = [{ code: 123 }, { code: "ABC" }];
     const output = Bun.stripANSI(captureOutput(() => printTable(rows)));
     expect(output).toMatchInlineSnapshot(`
 "╭──────╮
@@ -234,7 +269,9 @@ describe("printTable", () => {
 
   test("totalRows shows actual count from database", () => {
     const rows = [{ id: 1 }, { id: 2 }, { id: 3 }];
-    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { maxRows: 3, totalRows: 1000 })));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable(rows, { maxRows: 3, totalRows: 1000 })),
+    );
     expect(output).toMatchInlineSnapshot(`
 "╭────╮
 │ id │
@@ -249,7 +286,11 @@ describe("printTable", () => {
 
   test("title expands table width", () => {
     const rows = [{ a: 1 }];
-    const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "this is a very long title" })));
+    const output = Bun.stripANSI(
+      captureOutput(() =>
+        printTable(rows, { title: "this is a very long title" }),
+      ),
+    );
     expect(output).toMatchInlineSnapshot(`
 "╭─ this is a very long title ───╮
 │                             a │
@@ -274,13 +315,27 @@ describe("printTable", () => {
   test("handles very long table names", () => {
     const rows = [{ x: 1 }];
     const originalColumns = process.stdout.columns;
-    Object.defineProperty(process.stdout, "columns", { value: 30, configurable: true });
+    Object.defineProperty(process.stdout, "columns", {
+      value: 30,
+      configurable: true,
+    });
     try {
-      const output = Bun.stripANSI(captureOutput(() => printTable(rows, { title: "this_is_a_very_long_table_name_that_exceeds_terminal" })));
+      const output = Bun.stripANSI(
+        captureOutput(() =>
+          printTable(rows, {
+            title: "this_is_a_very_long_table_name_that_exceeds_terminal",
+          }),
+        ),
+      );
       // Table expands for long title (title is not truncated)
-      expect(output).toContain("this_is_a_very_long_table_name_that_exceeds_terminal");
+      expect(output).toContain(
+        "this_is_a_very_long_table_name_that_exceeds_terminal",
+      );
     } finally {
-      Object.defineProperty(process.stdout, "columns", { value: originalColumns, configurable: true });
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
     }
   });
 });
