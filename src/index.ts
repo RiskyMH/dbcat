@@ -162,11 +162,14 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let input: string | undefined;
   let full = false;
+  let help = false
   let json: false | "plain" | "color" = false;
 
   for (const arg of args) {
     if (arg === "--full" || arg === "-f") {
       full = true;
+    } else if (arg === "--help" || arg === "-h") {
+      help = true;
     } else if (arg === "--json") {
       json = "plain";
     } else if (arg === "--json=color") {
@@ -176,7 +179,7 @@ function parseArgs() {
     }
   }
 
-  return { input, full, json };
+  return { input, full, json, help };
 }
 
 const DEFAULT_LIMIT = 100;
@@ -204,9 +207,9 @@ function outputJson(data: unknown, color: boolean) {
 }
 
 async function main() {
-  const { input, full, json } = parseArgs();
+  const { input, full, json, help } = parseArgs();
 
-  if (!input && !process.env.DATABASE_URL) {
+  if ((!input && !process.env.DATABASE_URL) || help) {
     showUsageAndExit();
   }
 

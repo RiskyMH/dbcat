@@ -65,6 +65,28 @@ Pipe to `less -R` for scrollable output with colors:
 bunx dbcat ./data.db --full | less -R
 ```
 
+### Git diffable
+
+Do these things to make git use `dbcat` to diff your sqlite databases:
+
+```sh
+# .gitattributes
+*.sqlite binary diff=dbcat
+*.db binary diff=dbcat
+```
+
+```sh
+git config diff.lockb.textconv "bunx dbcat --full"
+git config diff.lockb.binary true
+```
+
+And now you should be able to use
+
+```sh
+git diff ./data.db
+```
+
+
 ## Requirements
 
 [Bun](https://bun.sh) v1.3+
