@@ -27,5 +27,5 @@ jobs:
           docker pull mariadb:11 &
           wait
       - run: bun install
-      - run: bun test --concurrent
+      - run: bun test
 
