@@ -9,19 +9,24 @@ import { join } from "node:path";
 const SQLITE_EXTENSIONS = [".db", ".sqlite", ".sqlite3", ".db3", ".s3db"];
 const REMOTE_PROTOCOLS = ["http://", "https://", "s3://"];
 
-export function createConnection(input?: string): InstanceType<typeof Bun.SQL> {
+export function createConnection(
+  input?: string,
+  options?: { readonly?: boolean }
+): InstanceType<typeof Bun.SQL> {
+  const opts = { readonly: true, ...options };
+
   if (!input) {
-    return new Bun.SQL();
+    return new Bun.SQL(opts);
   }
 
   if (
     !input.includes("://") &&
     SQLITE_EXTENSIONS.some((ext) => input.endsWith(ext))
   ) {
-    return new Bun.SQL(`sqlite://${input}`);
+    return new Bun.SQL(`sqlite://${input}`, opts);
   }
 
-  return new Bun.SQL(input);
+  return new Bun.SQL(input, opts);
 }
 
 async function downloadToTmp(url: string): Promise<string> {
@@ -141,7 +146,7 @@ function displayQueryResult(rows: Record<string, unknown>[]) {
 }
 
 async function readStdin(): Promise<string | null> {
-  if (process.stdin.isTTY) {
+  if (process.stdin.isTTY || Bun.stdin.size === 0) {
     return null;
   }
 
@@ -238,7 +243,7 @@ async function main() {
 
   let sql: InstanceType<typeof Bun.SQL>;
   try {
-    sql = createConnection(connectionInput);
+    sql = createConnection(connectionInput, { readonly: Bun.stdin.size == 0 });
   } catch (error) {
     console.error("Failed to connect:");
     console.error(error instanceof Error ? error.message : String(error));

@@ -170,6 +170,33 @@ describe("SQLite", () => {
 `);
   });
 
+  test("CLI runs piped (update) query", async () => {
+    const proc = Bun.spawn(["bun", "src/index.ts", testDbPath], {
+      cwd: import.meta.dir + "/..",
+      stdin: new Blob(["INSERT INTO users (name, email) VALUES (\"john\", \"no@email.co\") RETURNING *"]),
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const stdout = await new Response(proc.stdout).text();
+    await proc.exited;
+
+    const clean = Bun.stripANSI(stdout);
+    expect(clean).toMatchInlineSnapshot(`
+      "╭─ Result ──┬─────────────╮
+      │ id │ name │ email       │
+      ├────┼──────┼─────────────┤
+      │  3 │ john │ no@email.co │
+      ╰────┴──────┴─────────────╯
+      "
+    `);
+
+    const sql = createConnection(testDbPath, { readonly: false });
+    const users = await sql`SELECT * FROM users WHERE email = ${"no@email.co"}`;
+    expect(users.length).toBe(1);
+    expect(users[0].name).toBe("john");
+    expect(users[0].email).toBe("no@email.co");
+  });
+
   test("CLI downloads and opens remote SQLite file", async () => {
     const remoteUrl =
       "https://github.com/lerocha/chinook-database/raw/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite";
@@ -182,9 +209,11 @@ describe("SQLite", () => {
         stderr: "pipe",
       }
     );
+    const stderr = await new Response(proc.stderr).text();
     const stdout = await new Response(proc.stdout).text();
     const exitCode = await proc.exited;
 
+    expect(stderr).toBeEmpty()
     expect(exitCode).toBe(0);
 
     const data = JSON.parse(stdout);
@@ -210,4 +239,159 @@ describe("SQLite", () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Failed to download");
   });
+});
+
+
+
+
+
+
+// PROB USELESS TESTS BELOW:
+describe("SQLite (readonly)", () => {
+  const testDbPath = `/tmp/dbcli-sqlite-readonly-${Date.now()}.db`;
+  let sql: ReturnType<typeof createConnection>;
+
+  beforeAll(() => {
+    const db = new Database(testDbPath);
+    db.run("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
+    db.run("INSERT INTO users VALUES (1, 'Alice')");
+    db.close();
+
+    sql = createConnection(testDbPath, { readonly: true });
+  });
+
+  afterAll(async () => {
+    await sql.close();
+    await Bun.file(testDbPath).delete();
+  });
+
+  test("SELECT query works", async () => {
+    const rows = await runQuery(sql, "SELECT name FROM users WHERE id = 1");
+    expect(rows).toEqual([{ name: "Alice" }]);
+  });
+
+  test("INSERT query fails", async () => {
+    let thrownError: any;
+    try {
+      await runQuery(sql, "INSERT INTO users VALUES (2, 'Bob')");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+  });
+
+  test("CREATE TABLE query fails", async () => {
+    let thrownError: any;
+    try {
+      await runQuery(sql, "CREATE TABLE posts (id INTEGER)");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+  });
+
+  test("UPDATE query fails", async () => {
+    let thrownError: any;
+    try {
+      await runQuery(sql, "UPDATE users SET name = 'Alicia' WHERE id = 1");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+  });
+
+  test("DELETE query fails", async () => {
+    let thrownError: any;
+    try {
+      await runQuery(sql, "DELETE FROM users WHERE id = 1");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+  });
+});
+
+describe("createConnection readonly enforcement", () => {
+  const testDbPath = `/tmp/dbcli-sqlite-variants-${Date.now()}.db`;
+
+  beforeAll(() => {
+    const db = new Database(testDbPath);
+    db.run("CREATE TABLE users (id INTEGER, name TEXT)");
+    db.close();
+  });
+
+  afterAll(async () => {
+    await Bun.file(testDbPath).delete();
+  });
+
+  test("createConnection() creates a readonly in-memory db", async () => {
+    const sql = createConnection();
+    let thrownError: any;
+    try {
+      await runQuery(sql, "CREATE TABLE test (id INTEGER)");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("Connection closed");
+    await sql.close();
+  });
+
+  test("createConnection(':memory:') creates a readonly in-memory db", async () => {
+    const sql = createConnection(":memory:");
+    let thrownError: any;
+    try {
+      await runQuery(sql, "CREATE TABLE test (id INTEGER)");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("Cannot open an anonymous database in read-only mode.");
+    await sql.close();
+  });
+
+  test("createConnection('filename.db') creates a readonly connection", async () => {
+    const sql = createConnection(testDbPath);
+    let thrownError: any;
+    try {
+      await runQuery(sql, "INSERT INTO users (id, name) VALUES (1, 'A')");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+    await sql.close();
+  });
+
+  test("createConnection('sqlite://filename.db') creates a readonly connection", async () => {
+    const sql = createConnection(`sqlite://${testDbPath}`);
+    let thrownError: any;
+    try {
+      await runQuery(sql, "INSERT INTO users (id, name) VALUES (2, 'B')");
+    } catch (e) {
+      thrownError = e;
+    }
+    expect(thrownError).toBeDefined();
+    expect(thrownError.message).toContain("attempt to write a readonly database");
+    await sql.close();
+  });
+
+  test("createConnection('filename.db', { readonly: false }) creates a writable connection", async () => {
+    const writableTestDbPath = `/tmp/dbcli-sqlite-writable-${Date.now()}.db`;
+    const sql = createConnection(writableTestDbPath, { readonly: false });
+
+    await runQuery(sql, "CREATE TABLE temp_users (id INTEGER PRIMARY KEY, name TEXT)");
+    await runQuery(sql, "INSERT INTO temp_users (id, name) VALUES (1, 'Charlie')");
+
+    const rows = await runQuery(sql, "SELECT name FROM temp_users WHERE id = 1");
+    expect(rows).toEqual([{ name: "Charlie" }]);
+
+    await sql.close();
+    await Bun.file(writableTestDbPath).delete();
+  });
+
 });
