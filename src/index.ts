@@ -146,7 +146,7 @@ function displayQueryResult(rows: Record<string, unknown>[]) {
 }
 
 async function readStdin(): Promise<string | null> {
-  if (process.stdin.isTTY || Bun.stdin.size === 0) {
+  if (process.stdin.isTTY) {
     return null;
   }
 
@@ -246,7 +246,7 @@ async function main() {
 
   let sql: InstanceType<typeof Bun.SQL>;
   try {
-    sql = createConnection(connectionInput, { readonly: Bun.stdin.size == 0 });
+    sql = createConnection(connectionInput, { readonly: process.stdin.isTTY });
   } catch (error) {
     console.error("Failed to connect:");
     console.error(error instanceof Error ? error.message : String(error));
