@@ -338,21 +338,28 @@ describe("printTable", () => {
       });
     }
   });
-  test("multiline cell wrap with --full", () => {
-    const originalColumns = process.stdout.columns;
-    Object.defineProperty(process.stdout, "columns", {
-      value: 20, // Very narrow, for easy multi-line
-      configurable: true,
-    });
-    try {
-      const rows = [
-        { a: "short", b: "this is a very long cell that should wrap into multiple lines" },
-        { a: "medium length cell", b: "tiny" },
-      ];
-      const output = Bun.stripANSI(
-        captureOutput(() => printTable(rows, { maxRows: Infinity, fullContent: true, title: "wraptest" })),
-      );
-      expect(output).toMatchInlineSnapshot(`
+  test.each(['custom', 'wrapAnsi' in Bun && 'Bun.wrapAnsi'].filter(Boolean))
+    ("multiline cell wrap with --full (engine: %s)", (engine) => {
+      const originalColumns = process.stdout.columns;
+      Object.defineProperty(process.stdout, "columns", {
+        value: 20, // Very narrow, for easy multi-line
+        configurable: true,
+      });
+      let originalWrapAnsi = Bun.wrapAnsi
+      if (engine === 'custom') {
+        // @ts-expect-error
+        Bun.wrapAnsi = undefined
+      }
+
+      try {
+        const rows = [
+          { a: "short", b: "this is a very long cell that should wrap into multiple lines" },
+          { a: "medium length cell", b: "tiny" },
+        ];
+        const output = Bun.stripANSI(
+          captureOutput(() => printTable(rows, { maxRows: Infinity, fullContent: true, title: "wraptest" })),
+        );
+        expect(output).toMatchInlineSnapshot(`
         "╭─ wraptest ──────╮
         │ a    │ b        │
         ├──────┼──────────┤
@@ -365,7 +372,7 @@ describe("printTable", () => {
         │      │ wrap     │
         │      │ into     │
         │      │ multiple │
-        │      │  lines   │
+        │      │ lines    │
         ├──────┼──────────┤
         │ medi │ tiny     │
         │ um   │          │
@@ -374,13 +381,16 @@ describe("printTable", () => {
         │ cell │          │
         ╰──────┴──────────╯"
       `);
-    } finally {
-      Object.defineProperty(process.stdout, "columns", {
-        value: originalColumns,
-        configurable: true,
-      });
-    }
-  });
+      } finally {
+        Object.defineProperty(process.stdout, "columns", {
+          value: originalColumns,
+          configurable: true,
+        });
+        if (engine === 'custom') {
+          Bun.wrapAnsi = originalWrapAnsi;
+        }
+      }
+    });
 
   test('fullContent handles embedded newlines and wraps each line', () => {
     const originalColumns = process.stdout.columns;

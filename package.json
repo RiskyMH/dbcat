@@ -1,6 +1,6 @@
 {
   "name": "dbcat",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "A simple CLI to view database tables. Supports PostgreSQL, MySQL, and SQLite.",
   "author": "RiskyMH",
   "license": "MIT",
@@ -32,7 +32,7 @@
     "src/*"
   ],
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "npm:bun-types@canary",
     "typescript": "^5"
   }
 }

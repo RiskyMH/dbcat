@@ -77,8 +77,12 @@ export interface TableOptions {
   fullContent?: boolean;
 }
 
+// Wraps a string for table display, preserving ANSI codes and Unicode widths.
 function wrapLines(str: string, maxWidth: number): string[] {
-  // Split input into logical words, wrap to fit maxWidth
+  if (typeof Bun.wrapAnsi === "function") {
+    return Bun.wrapAnsi(str, maxWidth, { hard: true }).split("\n");
+  }
+
   const raw = str.split(/\n/g).join(" ");
   if (raw === "") return [""];
 
@@ -108,12 +112,12 @@ function wrapLines(str: string, maxWidth: number): string[] {
       }
     }
     if (Bun.stringWidth(current) >= maxWidth) {
-      lines.push(current);
+      lines.push(current.trim());
       current = "";
     }
   }
   if (current.length > 0) {
-    lines.push(current);
+    lines.push(current.trim());
   }
 
   return lines;
