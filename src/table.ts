@@ -74,6 +74,7 @@ export interface TableOptions {
   maxRows?: number;
   title?: string;
   totalRows?: number;
+  fullContent?: boolean;
 }
 
 function wrapLines(str: string, maxWidth: number): string[] {
@@ -180,7 +181,7 @@ export function printTable(
   const colWidths: number[] = allColumns.map((col) => Bun.stringWidth(col));
   const formattedRows: string[][] = displayRows.map((row) =>
     allColumns.map((col, i) => {
-      const formatted = formatValue(row[col]).replace(/\n/g, " ");
+      const formatted = formatValue(row[col]).replace(/\n/g, "\\n");
       colWidths[i] = Math.max(colWidths[i]!, Bun.stringWidth(formatted));
       return formatted;
     }),
@@ -303,8 +304,7 @@ export function printTable(
     `${dim}${BOX.headerLeft}${BOX.horizontal}${headerSep}${BOX.horizontal}${BOX.headerRight}${reset}`,
   );
 
-  // If in --full mode, apply smart multiline rendering:
-  if (maxRows === Infinity) {
+  if (options.fullContent) {
     for (let rowIdx = 0; rowIdx < visibleFormattedRows.length; rowIdx++) {
       const row = visibleFormattedRows[rowIdx] ?? [];
       const wrapped = row.map((val, i) => wrapLines(val, visibleColWidths[i]!));
@@ -327,7 +327,6 @@ export function printTable(
       }
     }
   } else {
-    // Legacy single-line row rendering
     for (const row of visibleFormattedRows) {
       const line = row
         .map((val, i) => {

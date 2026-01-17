@@ -49,7 +49,6 @@ describe("CLI", () => {
 
   test("shows tables when run without stdin", async () => {
     const { stdout, exitCode } = await runCli([testDbPath]);
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("Connected to");
     expect(stdout).toContain("users"); // Table name in border
@@ -58,7 +57,6 @@ describe("CLI", () => {
 
   test("executes piped query", async () => {
     const { stdout, exitCode } = await runCli([testDbPath], "SELECT * FROM users");
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("TestUser");
     expect(stdout).toContain("Result"); // Table title
@@ -69,27 +67,23 @@ describe("CLI", () => {
       [testDbPath],
       "SELECT * FROM users WHERE id = 999"
     );
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("(empty)");
   });
 
   test("handles invalid SQL gracefully", async () => {
     const { stderr, exitCode } = await runCli([testDbPath], "INVALID SQL QUERY");
-
     expect(exitCode).toBe(1);
     expect(stderr).toContain("Error");
   });
 
   test("handles nonexistent database", async () => {
     const { exitCode } = await runCli(["/nonexistent/path.db"]);
-
     expect(exitCode).toBe(1);
   });
 
   test("--full flag shows all rows without truncation", async () => {
     const { stdout, exitCode } = await runCli([largeDbPath, "--full"]);
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("item1");
     expect(stdout).toContain("item150");
@@ -99,7 +93,6 @@ describe("CLI", () => {
 
   test("-f shorthand works same as --full", async () => {
     const { stdout, exitCode } = await runCli([largeDbPath, "-f"]);
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("item150");
     expect(stdout).not.toContain("more rows");
@@ -107,7 +100,6 @@ describe("CLI", () => {
 
   test("without --full truncates large tables", async () => {
     const { stdout, exitCode } = await runCli([largeDbPath]);
-
     expect(exitCode).toBe(0);
     expect(stdout).toContain("item1");
     expect(stdout).toContain("item100");
@@ -119,9 +111,27 @@ describe("CLI", () => {
 
   test("shows database filename for sqlite", async () => {
     const { stdout, exitCode } = await runCli([testDbPath]);
-
     expect(exitCode).toBe(0);
     // Should show filename, not just "sqlite database"
     expect(stdout).toMatch(/Connected to.*\.db/);
+  });
+
+  test("--full-rows shows all rows", async () => {
+    const { stdout, exitCode } = await runCli([largeDbPath, "--full-rows"]);
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("item1");
+    expect(stdout).toContain("item150");
+    expect(stdout).not.toContain("more rows");
+    expect(stdout).toIncludeRepeated("├─────┼─────────┤", 1)
+  });
+
+  test("--full-content uses advanced wrapping+borders but only 100 rows", async () => {
+    const { stdout, exitCode } = await runCli([largeDbPath, "--full-content"]);
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("item1");
+    expect(stdout).toContain("item100");
+    expect(stdout).not.toContain("item150");
+    expect(stdout).toIncludeRepeated("├─────┼─────────┤", 100)
+    expect(stdout).toMatch(/\.\.\. 50 more/);
   });
 });

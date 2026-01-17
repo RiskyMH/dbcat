@@ -350,7 +350,7 @@ describe("printTable", () => {
         { a: "medium length cell", b: "tiny" },
       ];
       const output = Bun.stripANSI(
-        captureOutput(() => printTable(rows, { maxRows: Infinity, title: "wraptest" })),
+        captureOutput(() => printTable(rows, { maxRows: Infinity, fullContent: true, title: "wraptest" })),
       );
       expect(output).toMatchInlineSnapshot(`
         "╭─ wraptest ──────╮

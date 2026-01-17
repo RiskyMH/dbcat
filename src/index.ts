@@ -121,7 +121,7 @@ export function getTableData(
   tableName: string,
   limit?: number
 ): Promise<Record<string, unknown>[]> {
-  if (limit === undefined) {
+  if (limit === undefined || limit === Infinity) {
     return sql`SELECT * FROM ${sql(tableName)}`;
   }
   return sql`SELECT * FROM ${sql(tableName)} LIMIT ${limit}`;
@@ -135,14 +135,15 @@ function displayTable(
   tableName: string,
   rows: Record<string, unknown>[],
   totalRows?: number,
-  maxRows?: number
+  maxRows?: number,
+  fullContent?: boolean
 ) {
   console.log("");
-  printTable(rows, { title: tableName, totalRows, maxRows });
+  printTable(rows, { title: tableName, totalRows, maxRows, fullContent });
 }
 
 function displayQueryResult(rows: Record<string, unknown>[]) {
-  printTable(rows, { title: "Result", maxRows: Infinity });
+  printTable(rows, { title: "Result", maxRows: Infinity, fullContent: true });
 }
 
 async function readStdin(): Promise<string | null> {
@@ -162,12 +163,18 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let input: string | undefined;
   let full = false;
-  let help = false
+  let help = false;
   let json: false | "plain" | "color" = false;
+  let fullRows = false;
+  let fullContent = false;
 
   for (const arg of args) {
     if (arg === "--full" || arg === "-f") {
       full = true;
+    } else if (arg === "--full-rows") {
+      fullRows = true;
+    } else if (arg === "--full-content") {
+      fullContent = true;
     } else if (arg === "--help" || arg === "-h") {
       help = true;
     } else if (arg === "--json") {
@@ -179,7 +186,7 @@ function parseArgs() {
     }
   }
 
-  return { input, full, json, help };
+  return { input, full, json, help, fullRows, fullContent };
 }
 
 const DEFAULT_LIMIT = 100;
@@ -212,7 +219,7 @@ function outputJson(data: unknown, color: boolean) {
 }
 
 async function main() {
-  const { input, full, json, help } = parseArgs();
+  const { input, full, json, help, fullRows, fullContent } = parseArgs();
 
   if ((!input && !process.env.DATABASE_URL) || help) {
     showUsageAndExit();
@@ -300,15 +307,18 @@ async function main() {
           console.log(`${dim}No tables found.${reset}`);
         } else {
           for (const table of tables) {
-            if (full) {
+            const maxRows = (full || fullRows) ? Infinity : DEFAULT_LIMIT;
+            const fullContentFlag = full || fullContent;
+
+            if (maxRows === Infinity) {
               const data = await getTableData(sql, table.name);
-              displayTable(table.name, data, undefined, Infinity);
+              displayTable(table.name, data, undefined, Infinity, fullContentFlag);
             } else {
               const [count, data] = await Promise.all([
                 getTableCount(sql, table.name),
-                getTableData(sql, table.name, DEFAULT_LIMIT),
+                getTableData(sql, table.name, maxRows),
               ]);
-              displayTable(table.name, data, count, DEFAULT_LIMIT);
+              displayTable(table.name, data, count, maxRows, fullContentFlag);
             }
           }
         }
