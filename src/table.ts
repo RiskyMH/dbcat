@@ -119,6 +119,10 @@ function wrapLines(str: string, maxWidth: number): string[] {
   return lines;
 }
 
+function wrapMultilineCell(str: string, maxWidth: number): string[] {
+  return String(str).split('\n').flatMap(line => wrapLines(line, maxWidth));
+}
+
 export function printTable(
   rows: Record<string, unknown>[],
   options: TableOptions = {},
@@ -151,8 +155,7 @@ export function printTable(
         )} ${dim}${BOX.vertical}${reset}`,
       );
       console.log(
-        `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${
-          BOX.bottomRight
+        `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.bottomRight
         }${reset}`,
       );
     } else {
@@ -181,7 +184,7 @@ export function printTable(
   const colWidths: number[] = allColumns.map((col) => Bun.stringWidth(col));
   const formattedRows: string[][] = displayRows.map((row) =>
     allColumns.map((col, i) => {
-      const formatted = formatValue(row[col]).replace(/\n/g, "\\n");
+      const formatted = options.fullContent ? formatValue(row[col]) : formatValue(row[col]).replace(/\n/g, `${dim}\\n${reset}`);
       colWidths[i] = Math.max(colWidths[i]!, Bun.stringWidth(formatted));
       return formatted;
     }),
@@ -307,7 +310,8 @@ export function printTable(
   if (options.fullContent) {
     for (let rowIdx = 0; rowIdx < visibleFormattedRows.length; rowIdx++) {
       const row = visibleFormattedRows[rowIdx] ?? [];
-      const wrapped = row.map((val, i) => wrapLines(val, visibleColWidths[i]!));
+      const wrapped = row.map((val, i) => wrapMultilineCell(val, visibleColWidths[i]!));
+
       const rowHeight = Math.max(...wrapped.map(x => x.length));
       for (let lineIdx = 0; lineIdx < rowHeight; lineIdx++) {
         const pieces = wrapped.map((cellLines, i) => {
@@ -316,10 +320,10 @@ export function printTable(
             ? padLeft(truncate(part, visibleColWidths[i]!), visibleColWidths[i]!)
             : padRight(truncate(part, visibleColWidths[i]!), visibleColWidths[i]!);
         });
-        const line = pieces.join(` ${dim}${BOX.vertical}${reset} `);
-        console.log(`${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`);
+        const line = pieces.join(` ${reset}${dim}${BOX.vertical}${reset} `);
+        console.log(`${reset}${dim}${BOX.vertical}${reset} ${line} ${reset}${dim}${BOX.vertical}${reset}`);
       }
-      if (rowIdx < visibleFormattedRows.length - 1) {
+      if (rowIdx < visibleFormattedRows.length - 1 || (rowIdx === visibleFormattedRows.length - 1 && infoText)) {
         const rowSep = visibleColWidths
           .map((w) => BOX.horizontal.repeat(w))
           .join(`${BOX.horizontal}${BOX.headerCross}${BOX.horizontal}`);
@@ -348,8 +352,7 @@ export function printTable(
     console.log(`${dim}${BOX.vertical} ${infoLine} ${BOX.vertical}${reset}`);
 
     console.log(
-      `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(totalInnerWidth)}${
-        BOX.bottomRight
+      `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(totalInnerWidth)}${BOX.bottomRight
       }${reset}`,
     );
   } else {

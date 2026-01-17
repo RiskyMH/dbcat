@@ -131,7 +131,7 @@ describe("CLI", () => {
     expect(stdout).toContain("item1");
     expect(stdout).toContain("item100");
     expect(stdout).not.toContain("item150");
-    expect(stdout).toIncludeRepeated("├─────┼─────────┤", 100)
+    expect(stdout).toIncludeRepeated("├─────┼─────────┤", 101)
     expect(stdout).toMatch(/\.\.\. 50 more/);
   });
 });

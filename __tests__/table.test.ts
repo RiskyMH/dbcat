@@ -381,4 +381,54 @@ describe("printTable", () => {
       });
     }
   });
+
+  test('fullContent handles embedded newlines and wraps each line', () => {
+    const originalColumns = process.stdout.columns;
+    Object.defineProperty(process.stdout, "columns", {
+      value: 16,
+      configurable: true,
+    });
+    try {
+      const rows = [
+        { msg: "Hello.\nWorld is long enough to wrap.\nBye." }
+      ];
+      const output = Bun.stripANSI(
+        captureOutput(() => printTable(rows, { fullContent: true, title: "multiline" }))
+      );
+      expect(output).toMatchInlineSnapshot(`
+"╭─ multiline ──╮
+│ msg          │
+├──────────────┤
+│ Hello.       │
+│ World is     │
+│ long enough  │
+│ to wrap.     │
+│ Bye.         │
+╰──────────────╯"
+`);
+    } finally {
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
+    }
+  });
+
+  test('fullContent separator before more rows', () => {
+    const rows = Array.from({ length: 3 }, (_, i) => ({ a: `row${i}` }));
+    const output = Bun.stripANSI(
+      captureOutput(() => printTable(rows, { maxRows: 2, fullContent: true, title: 'sep-test' }))
+    );
+    expect(output).toMatchInlineSnapshot(`
+      "╭─ sep-test ───╮
+      │ a            │
+      ├──────────────┤
+      │ row0         │
+      ├──────────────┤
+      │ row1         │
+      ├──────────────┤
+      │ ... 1 more … │
+      ╰──────────────╯"
+    `);
+  });
 });
