@@ -372,7 +372,7 @@ describe("printTable", () => {
         │      │ wrap     │
         │      │ into     │
         │      │ multiple │
-        │      │ lines    │
+        │      │  lines   │
         ├──────┼──────────┤
         │ medi │ tiny     │
         │ um   │          │

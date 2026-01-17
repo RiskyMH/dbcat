@@ -80,7 +80,7 @@ export interface TableOptions {
 // Wraps a string for table display, preserving ANSI codes and Unicode widths.
 function wrapLines(str: string, maxWidth: number): string[] {
   if (typeof Bun.wrapAnsi === "function") {
-    return Bun.wrapAnsi(str, maxWidth, { hard: true }).split("\n");
+    return Bun.wrapAnsi(str, maxWidth, { hard: true, trim: false }).split("\n");
   }
 
   const raw = str.split(/\n/g).join(" ");
@@ -112,12 +112,12 @@ function wrapLines(str: string, maxWidth: number): string[] {
       }
     }
     if (Bun.stringWidth(current) >= maxWidth) {
-      lines.push(current.trim());
+      lines.push(current);
       current = "";
     }
   }
   if (current.length > 0) {
-    lines.push(current.trim());
+    lines.push(current);
   }
 
   return lines;
