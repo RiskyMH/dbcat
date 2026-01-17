@@ -76,6 +76,48 @@ export interface TableOptions {
   totalRows?: number;
 }
 
+function wrapLines(str: string, maxWidth: number): string[] {
+  // Split input into logical words, wrap to fit maxWidth
+  const raw = str.split(/\n/g).join(" ");
+  if (raw === "") return [""];
+
+  let lines: string[] = [];
+  let current = "";
+
+  const tokens = raw.split(/([ ]+)/);
+  for (const token of tokens) {
+    let fragment = token;
+    while (fragment.length > 0) {
+      const width = Bun.stringWidth(current + fragment);
+      if (width > maxWidth) {
+        if (current.length > 0) {
+          lines.push(current);
+          current = "";
+        } else {
+          let cutPoint = 1;
+          while (cutPoint < fragment.length && Bun.stringWidth(fragment.slice(0, cutPoint)) < maxWidth) {
+            cutPoint++;
+          }
+          lines.push(fragment.slice(0, cutPoint));
+          fragment = fragment.slice(cutPoint);
+        }
+      } else {
+        current += fragment;
+        fragment = "";
+      }
+    }
+    if (Bun.stringWidth(current) >= maxWidth) {
+      lines.push(current);
+      current = "";
+    }
+  }
+  if (current.length > 0) {
+    lines.push(current);
+  }
+
+  return lines;
+}
+
 export function printTable(
   rows: Record<string, unknown>[],
   options: TableOptions = {},
@@ -261,18 +303,44 @@ export function printTable(
     `${dim}${BOX.headerLeft}${BOX.horizontal}${headerSep}${BOX.horizontal}${BOX.headerRight}${reset}`,
   );
 
-  for (const row of visibleFormattedRows) {
-    const line = row
-      .map((val, i) => {
-        const truncated = truncate(val, visibleColWidths[i]!);
-        return visibleIsNumeric[i]
-          ? padLeft(truncated, visibleColWidths[i]!)
-          : padRight(truncated, visibleColWidths[i]!);
-      })
-      .join(` ${dim}${BOX.vertical}${reset} `);
-    console.log(
-      `${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`,
-    );
+  // If in --full mode, apply smart multiline rendering:
+  if (maxRows === Infinity) {
+    for (let rowIdx = 0; rowIdx < visibleFormattedRows.length; rowIdx++) {
+      const row = visibleFormattedRows[rowIdx] ?? [];
+      const wrapped = row.map((val, i) => wrapLines(val, visibleColWidths[i]!));
+      const rowHeight = Math.max(...wrapped.map(x => x.length));
+      for (let lineIdx = 0; lineIdx < rowHeight; lineIdx++) {
+        const pieces = wrapped.map((cellLines, i) => {
+          const part: string = typeof cellLines[lineIdx] === "string" ? cellLines[lineIdx]! : "";
+          return visibleIsNumeric[i]
+            ? padLeft(truncate(part, visibleColWidths[i]!), visibleColWidths[i]!)
+            : padRight(truncate(part, visibleColWidths[i]!), visibleColWidths[i]!);
+        });
+        const line = pieces.join(` ${dim}${BOX.vertical}${reset} `);
+        console.log(`${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`);
+      }
+      if (rowIdx < visibleFormattedRows.length - 1) {
+        const rowSep = visibleColWidths
+          .map((w) => BOX.horizontal.repeat(w))
+          .join(`${BOX.horizontal}${BOX.headerCross}${BOX.horizontal}`);
+        console.log(`${dim}${BOX.headerLeft}${BOX.horizontal}${rowSep}${BOX.horizontal}${BOX.headerRight}${reset}`);
+      }
+    }
+  } else {
+    // Legacy single-line row rendering
+    for (const row of visibleFormattedRows) {
+      const line = row
+        .map((val, i) => {
+          const truncated = truncate(val, visibleColWidths[i]!);
+          return visibleIsNumeric[i]
+            ? padLeft(truncated, visibleColWidths[i]!)
+            : padRight(truncated, visibleColWidths[i]!);
+        })
+        .join(` ${dim}${BOX.vertical}${reset} `);
+      console.log(
+        `${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`,
+      );
+    }
   }
 
   if (infoText) {

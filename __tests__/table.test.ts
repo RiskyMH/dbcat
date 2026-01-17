@@ -338,4 +338,47 @@ describe("printTable", () => {
       });
     }
   });
+  test("multiline cell wrap with --full", () => {
+    const originalColumns = process.stdout.columns;
+    Object.defineProperty(process.stdout, "columns", {
+      value: 20, // Very narrow, for easy multi-line
+      configurable: true,
+    });
+    try {
+      const rows = [
+        { a: "short", b: "this is a very long cell that should wrap into multiple lines" },
+        { a: "medium length cell", b: "tiny" },
+      ];
+      const output = Bun.stripANSI(
+        captureOutput(() => printTable(rows, { maxRows: Infinity, title: "wraptest" })),
+      );
+      expect(output).toMatchInlineSnapshot(`
+        "╭─ wraptest ──────╮
+        │ a    │ b        │
+        ├──────┼──────────┤
+        │ shor │ this is  │
+        │ t    │ a very   │
+        │      │ long     │
+        │      │ cell     │
+        │      │ that     │
+        │      │ should   │
+        │      │ wrap     │
+        │      │ into     │
+        │      │ multiple │
+        │      │  lines   │
+        ├──────┼──────────┤
+        │ medi │ tiny     │
+        │ um   │          │
+        │ leng │          │
+        │ th   │          │
+        │ cell │          │
+        ╰──────┴──────────╯"
+      `);
+    } finally {
+      Object.defineProperty(process.stdout, "columns", {
+        value: originalColumns,
+        configurable: true,
+      });
+    }
+  });
 });

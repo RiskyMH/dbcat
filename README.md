@@ -33,11 +33,11 @@ echo "SELECT * FROM users" | bunx dbcat ./data.db
 
 ### Options
 
-| Flag           | Description                                       |
-|----------------|---------------------------------------------------|
-| `--full`, `-f` | Show all rows when browsing tables (default: 100) |
-| `--json`       | Output as JSON (indented if TTY)                  |
-| `--json=color` | Output as normal object console.log               |
+| Flag           | Description                                                   |
+|----------------|---------------------------------------------------------------|
+| `--full`, `-f` | Show all rows & data when browsing tables (default: 100 rows) |
+| `--json`       | Output as JSON (indented if TTY)                              |
+| `--json=color` | Output as normal object console.log                           |
 
 Piped queries always return all rows.
 

@@ -164,6 +164,7 @@ describe("SQLite", () => {
 │ name  │ email          │
 ├───────┼────────────────┤
 │ Alice │ alice@test.com │
+├───────┼────────────────┤
 │ Bob   │ bob@test.com   │
 ╰───────┴────────────────╯
 "

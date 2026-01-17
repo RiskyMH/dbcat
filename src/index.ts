@@ -137,7 +137,7 @@ function displayTable(
   totalRows?: number,
   maxRows?: number
 ) {
-  console.log();
+  console.log("");
   printTable(rows, { title: tableName, totalRows, maxRows });
 }
 
@@ -194,6 +194,11 @@ function showUsageAndExit(): never {
   console.error("  dbcat https://example.com/data.db");
   console.error("");
   console.error("Or set DATABASE_URL environment variable.");
+  console.error("");
+  console.error("Flags:");
+  console.error("  --full  : Show the entire table and wrap cell values to fit column widths");
+  console.error("  --json  : Output as JSON instead of a visual table");
+  console.error("  --help  : Show this help message");
   process.exit(1);
 }
 
