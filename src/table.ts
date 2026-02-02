@@ -135,6 +135,7 @@ export function printTable(
   const dim = Bun.enableANSIColors ? DIM : "";
   const reset = Bun.enableANSIColors ? RESET : "";
   const bold = Bun.enableANSIColors ? BOLD : "";
+  let content = [] as string[];
 
   if (rows.length === 0) {
     if (title) {
@@ -147,24 +148,25 @@ export function printTable(
       const titleWidth = Bun.stringWidth(titleDisplay);
       const innerWidth = contentWidth + 2;
       const remainingWidth = innerWidth - titleWidth - 1;
-      console.log(
+      content.push(
         `${dim}${BOX.topLeft}${BOX.horizontal}${reset}${bold}${titleDisplay}${reset}${dim}${BOX.horizontal.repeat(
           Math.max(0, remainingWidth),
         )}${BOX.topRight}${reset}`,
       );
-      console.log(
+      content.push(
         `${dim}${BOX.vertical}${reset} ${padRight(
           emptyText,
           contentWidth,
         )} ${dim}${BOX.vertical}${reset}`,
       );
-      console.log(
+      content.push(
         `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(innerWidth)}${BOX.bottomRight
         }${reset}`,
       );
     } else {
-      console.log("(empty)");
+      content.push("(empty)");
     }
+    console.log(content.join("\n"));
     return;
   }
 
@@ -285,11 +287,11 @@ export function printTable(
 
     const beforeTitle = fullTopBorder.slice(0, 2);
     const afterTitle = fullTopBorder.slice(2 + titleDisplayWidth);
-    console.log(
+    content.push(
       `${dim}${beforeTitle}${reset}${bold}${titleDisplay}${reset}${dim}${afterTitle}${reset}`,
     );
   } else {
-    console.log(`${dim}${fullTopBorder}${reset}`);
+    content.push(`${dim}${fullTopBorder}${reset}`);
   }
 
   const header = columns
@@ -300,14 +302,14 @@ export function printTable(
         : padRight(truncated, visibleColWidths[i]!);
     })
     .join(` ${dim}${BOX.vertical}${reset} `);
-  console.log(
+  content.push(
     `${dim}${BOX.vertical}${reset} ${header} ${dim}${BOX.vertical}${reset}`,
   );
 
   const headerSep = visibleColWidths
     .map((w) => BOX.horizontal.repeat(w))
     .join(`${BOX.horizontal}${BOX.headerCross}${BOX.horizontal}`);
-  console.log(
+  content.push(
     `${dim}${BOX.headerLeft}${BOX.horizontal}${headerSep}${BOX.horizontal}${BOX.headerRight}${reset}`,
   );
 
@@ -325,13 +327,13 @@ export function printTable(
             : padRight(truncate(part, visibleColWidths[i]!), visibleColWidths[i]!);
         });
         const line = pieces.join(` ${reset}${dim}${BOX.vertical}${reset} `);
-        console.log(`${reset}${dim}${BOX.vertical}${reset} ${line} ${reset}${dim}${BOX.vertical}${reset}`);
+        content.push(`${reset}${dim}${BOX.vertical}${reset} ${line} ${reset}${dim}${BOX.vertical}${reset}`);
       }
       if (rowIdx < visibleFormattedRows.length - 1 || (rowIdx === visibleFormattedRows.length - 1 && infoText)) {
         const rowSep = visibleColWidths
           .map((w) => BOX.horizontal.repeat(w))
           .join(`${BOX.horizontal}${BOX.headerCross}${BOX.horizontal}`);
-        console.log(`${dim}${BOX.headerLeft}${BOX.horizontal}${rowSep}${BOX.horizontal}${BOX.headerRight}${reset}`);
+        content.push(`${dim}${BOX.headerLeft}${BOX.horizontal}${rowSep}${BOX.horizontal}${BOX.headerRight}${reset}`);
       }
     }
   } else {
@@ -344,7 +346,7 @@ export function printTable(
             : padRight(truncated, visibleColWidths[i]!);
         })
         .join(` ${dim}${BOX.vertical}${reset} `);
-      console.log(
+      content.push(
         `${dim}${BOX.vertical}${reset} ${line} ${dim}${BOX.vertical}${reset}`,
       );
     }
@@ -353,9 +355,8 @@ export function printTable(
   if (infoText) {
     const truncatedInfo = truncate(infoText, innerWidth);
     const infoLine = padRight(truncatedInfo, innerWidth);
-    console.log(`${dim}${BOX.vertical} ${infoLine} ${BOX.vertical}${reset}`);
-
-    console.log(
+    content.push(`${dim}${BOX.vertical} ${infoLine} ${BOX.vertical}${reset}`);
+    content.push(
       `${dim}${BOX.bottomLeft}${BOX.horizontal.repeat(totalInnerWidth)}${BOX.bottomRight
       }${reset}`,
     );
@@ -363,8 +364,11 @@ export function printTable(
     const bottomBorder = visibleColWidths
       .map((w) => BOX.horizontal.repeat(w))
       .join(`${BOX.horizontal}${BOX.bottomCross}${BOX.horizontal}`);
-    console.log(
+    content.push(
       `${dim}${BOX.bottomLeft}${BOX.horizontal}${bottomBorder}${BOX.horizontal}${BOX.bottomRight}${reset}`,
     );
   }
+
+  console.log(content.join("\n"));
+  return;
 }
