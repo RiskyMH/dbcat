@@ -29,7 +29,7 @@ function formatValue(value: unknown, compact = false): string {
   if (typeof value === "string") {
     return value;
   }
-  return Bun.inspect(value, { colors: Bun.enableANSIColors, depth: 2, compact, });
+  return Bun.inspect(value, { colors: Bun.enableANSIColors, depth: 2, compact });
 }
 
 function truncate(str: string, maxWidth: number): string {
@@ -190,7 +190,11 @@ export function printTable(
   const colWidths: number[] = allColumns.map((col) => Bun.stringWidth(col));
   const formattedRows: string[][] = displayRows.map((row) =>
     allColumns.map((col, i) => {
-      const formatted = options.fullContent ? formatValue(row[col], true) : formatValue(row[col], false).replace(/\n/g, `${dim}\\n${reset}`);
+      const formatted = options.fullContent
+        ? formatValue(row[col], false)
+        : formatValue(row[col], true)
+          .replace(/\n/g, `${dim}\\n${reset}`)
+          .replace(/\r/g, `${dim}\\r${reset}`);
       colWidths[i] = Math.max(colWidths[i]!, Bun.stringWidth(formatted));
       return formatted;
     }),
