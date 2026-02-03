@@ -20,7 +20,7 @@ function getTerminalWidth(): number {
   return process.stdout.columns || process.stderr.columns || 120;
 }
 
-function formatValue(value: unknown): string {
+function formatValue(value: unknown, compact = false): string {
   if (value === null || value === undefined) {
     const dim = Bun.enableANSIColors ? DIM : "";
     const reset = Bun.enableANSIColors ? RESET : "";
@@ -29,7 +29,7 @@ function formatValue(value: unknown): string {
   if (typeof value === "string") {
     return value;
   }
-  return Bun.inspect(value, { colors: Bun.enableANSIColors, depth: 2 });
+  return Bun.inspect(value, { colors: Bun.enableANSIColors, depth: 2, compact, });
 }
 
 function truncate(str: string, maxWidth: number): string {
@@ -190,7 +190,7 @@ export function printTable(
   const colWidths: number[] = allColumns.map((col) => Bun.stringWidth(col));
   const formattedRows: string[][] = displayRows.map((row) =>
     allColumns.map((col, i) => {
-      const formatted = options.fullContent ? formatValue(row[col]) : formatValue(row[col]).replace(/\n/g, `${dim}\\n${reset}`);
+      const formatted = options.fullContent ? formatValue(row[col], true) : formatValue(row[col], false).replace(/\n/g, `${dim}\\n${reset}`);
       colWidths[i] = Math.max(colWidths[i]!, Bun.stringWidth(formatted));
       return formatted;
     }),
