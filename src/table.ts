@@ -34,6 +34,8 @@ function formatValue(value: unknown, compact = false): string {
 
 function truncate(str: string, maxWidth: number): string {
   if (typeof Bun.sliceAnsi === "function") {
+    // hopefully can remove this, but Bun.sliceAnsi somehow is making last char reset color if its same length
+    if (Bun.stringWidth(str) <= maxWidth) return str;
     return Bun.sliceAnsi(str, 0, maxWidth, "…");
   }
 
