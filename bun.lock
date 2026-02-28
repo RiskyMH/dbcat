@@ -11,12 +11,12 @@
     },
   },
   "packages": {
-    "@types/bun": ["bun-types@1.3.7-canary.20260117T140656", "", { "dependencies": { "@types/node": "*" } }, "sha512-SaK4OfKzRc0aoZKQTqgIVjLJWzBG9cwuwapCq3B4RZZKjofBEZ1xSRIqe3H33+jNN/SaXRJg+eDSOWPDei5FJg=="],
+    "@types/bun": ["bun-types@1.3.10-canary.20260227T141815", "", { "dependencies": { "@types/node": "*" } }, "sha512-u0/aP1nq0xM2jFSPbVhATWxEgXYrxKUGhEsNuSlquYS04Lwsw3qNlKYZKZ/K1o0I4S1MKCFrK0m7951GN6XS3g=="],
 
-    "@types/node": ["@types/node@25.0.9", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-/rpCXHlCWeqClNBwUhDcusJxXYDjZTyE8v5oTO7WbL8eij2nKhUeU89/6xgjU7N4/Vh3He0BtyhJdQbDyhiXAw=="],
+    "@types/node": ["@types/node@25.3.2", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-RpV6r/ij22zRRdyBPcxDeKAzH43phWVKEjL2iksqo1Vz3CuBUrgmPpPhALKiRfU7OMCmeeO9vECBMsV0hMTG8Q=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
-    "undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
+    "undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
   }
 }

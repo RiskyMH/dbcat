@@ -33,6 +33,10 @@ function formatValue(value: unknown, compact = false): string {
 }
 
 function truncate(str: string, maxWidth: number): string {
+  if (typeof Bun.sliceAnsi === "function") {
+    return Bun.sliceAnsi(str, 0, maxWidth, "…");
+  }
+
   const width = Bun.stringWidth(str);
   if (width <= maxWidth) {
     return str;
